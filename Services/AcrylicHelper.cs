@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
 using TaskDock11.Services.Win32;
 
 namespace TaskDock11.Services
@@ -43,7 +44,7 @@ namespace TaskDock11.Services
             public int AnimationId;
         }
 
-        public static void EnableBlur(Window window, bool enable, uint gradientColor = 0x99000000)
+        public static void EnableBlur(Window window, bool enable, Color? tintColor = null, double opacity = 0.75)
         {
             var helper = new WindowInteropHelper(window);
             IntPtr hwnd = helper.Handle;
@@ -58,19 +59,22 @@ namespace TaskDock11.Services
                 int darkMode = 1;
                 NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_USE_IMMERSIVE_DARK_MODE, ref darkMode, sizeof(int));
             }
-            catch
-            {
-                // 旧版本降级走 AccentPolicy
-            }
+            catch { }
 
-            // 2. 备用高兼容性 AccentPolicy (支持 Win10 及 Win11 全版本)
+            // 2. 构造符合 Win10/Win11 AccentPolicy 的 GradientColor (格式: AABBGGRR)
             try
             {
+                Color c = tintColor ?? Color.FromRgb(20, 20, 24);
+                byte alpha = (byte)(Math.Clamp(opacity, 0.05, 1.0) * 255);
+                
+                // 注意 AccentPolicy 的字节顺序是 A A B B G G R R
+                int rawGradient = (alpha << 24) | (c.B << 16) | (c.G << 8) | c.R;
+
                 var policy = new AccentPolicy
                 {
                     AccentState = enable ? AccentState.ACCENT_ENABLE_ACRYLICBLURBEHIND : AccentState.ACCENT_DISABLED,
                     AccentFlags = 2,
-                    GradientColor = (int)gradientColor
+                    GradientColor = rawGradient
                 };
 
                 int structSize = Marshal.SizeOf(policy);
@@ -87,10 +91,7 @@ namespace TaskDock11.Services
                 SetWindowCompositionAttribute(hwnd, ref data);
                 Marshal.FreeHGlobal(pPolicy);
             }
-            catch
-            {
-                // 忽略底层失败
-            }
+            catch { }
         }
     }
 }

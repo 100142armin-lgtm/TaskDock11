@@ -21,7 +21,7 @@ namespace TaskDock11.Models
     public class DockSettings
     {
         // 视觉外观
-        public string BackgroundColorHex { get; set; } = "#1A1A1A";
+        public string BackgroundColorHex { get; set; } = "#0F172A";
         public double BackgroundOpacity { get; set; } = 0.75;
         public bool EnableAcrylicBlur { get; set; } = true;
         public double CornerRadius { get; set; } = 16.0;

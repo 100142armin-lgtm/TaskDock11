@@ -64,19 +64,21 @@ namespace TaskDock11
             var s = _viewModel.Settings;
 
             // 1. 设置背景色与透明度
+            Color rawColor;
             try
             {
-                var color = (Color)ColorConverter.ConvertFromString(s.BackgroundColorHex);
-                color.A = (byte)(s.BackgroundOpacity * 255);
-                MainShell.Background = new SolidColorBrush(color);
+                rawColor = (Color)ColorConverter.ConvertFromString(s.BackgroundColorHex);
             }
             catch
             {
-                MainShell.Background = new SolidColorBrush(Color.FromArgb((byte)(s.BackgroundOpacity * 255), 30, 30, 30));
+                rawColor = Color.FromRgb(15, 23, 42); // 默认高科技黑曜石
             }
 
-            // 2. 亚克力磨砂毛玻璃
-            AcrylicHelper.EnableBlur(this, s.EnableAcrylicBlur);
+            var brushColor = Color.FromArgb((byte)(s.BackgroundOpacity * 255), rawColor.R, rawColor.G, rawColor.B);
+            MainShell.Background = new SolidColorBrush(brushColor);
+
+            // 2. 亚克力磨砂毛玻璃 (与用户选择的色泽完美实时混合)
+            AcrylicHelper.EnableBlur(this, s.EnableAcrylicBlur, rawColor, s.BackgroundOpacity);
 
             // 3. 屏幕并存与置顶
             Topmost = (s.Coexist == CoexistMode.Topmost || s.Coexist == CoexistMode.AutoHide);
@@ -314,7 +316,7 @@ namespace TaskDock11
 
         private void MenuSettings_Click(object sender, RoutedEventArgs e)
         {
-            var settingsWin = new SettingsWindow(_viewModel)
+            var settingsWin = new SettingsWindow(this, _viewModel)
             {
                 Owner = this
             };
