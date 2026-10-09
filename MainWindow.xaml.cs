@@ -29,6 +29,7 @@ namespace TaskDock11
             _viewModel = new MainViewModel(Dispatcher);
             DataContext = _viewModel;
             _appBarService = new AppBarService();
+            Icon = LogoGenerator.CreateTechLogo();
 
             _autoHideTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
             _autoHideTimer.Tick += (s, e) =>
@@ -77,10 +78,7 @@ namespace TaskDock11
             var brushColor = Color.FromArgb((byte)(s.BackgroundOpacity * 255), rawColor.R, rawColor.G, rawColor.B);
             MainShell.Background = new SolidColorBrush(brushColor);
 
-            // 2. 亚克力磨砂毛玻璃 (与用户选择的色泽完美实时混合)
-            AcrylicHelper.EnableBlur(this, s.EnableAcrylicBlur, rawColor, s.BackgroundOpacity);
-
-            // 3. 屏幕并存与置顶
+            // 2. 屏幕并存与置顶
             Topmost = (s.Coexist == CoexistMode.Topmost || s.Coexist == CoexistMode.AutoHide);
         }
 

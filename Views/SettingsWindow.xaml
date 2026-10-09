@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="TaskDock 11 控制中心" 
-        Height="620" Width="480"
+        Height="580" Width="480"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="#0F1217"
@@ -70,7 +70,7 @@
         </Style>
     </Window.Resources>
 
-    <!-- 主窗口外壳 (带流光细边框与投影) -->
+    <!-- 主窗口外壳 -->
     <Border CornerRadius="16" Background="#0F1217" BorderBrush="#2A3441" BorderThickness="1">
         <Border.Effect>
             <DropShadowEffect BlurRadius="30" ShadowDepth="8" Opacity="0.7" Color="#000000"/>
@@ -96,8 +96,8 @@
                        RenderOptions.BitmapScalingMode="HighQuality"/>
 
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Text="TaskDock 11" FontSize="18" FontWeight="Bold" Foreground="#F8FAFC"/>
-                    <TextBlock Text="个性化视觉控制台 · 实时动态渲染" FontSize="11" Foreground="#38BDF8" Margin="0,2,0,0"/>
+                    <TextBlock Text="TaskDock 11 控制台" FontSize="18" FontWeight="Bold" Foreground="#F8FAFC"/>
+                    <TextBlock Text="实时动态渲染 · 智能应用坞" FontSize="11" Foreground="#38BDF8" Margin="0,2,0,0"/>
                 </StackPanel>
 
                 <Button Grid.Column="2" Width="28" Height="28" Background="Transparent" 
@@ -106,34 +106,15 @@
                 </Button>
             </Grid>
 
-            <!-- 2. 中间卡片配置区 (全部调节实时生效) -->
+            <!-- 2. 中间卡片配置区 -->
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,-8,0" Padding="0,0,8,0">
                 <StackPanel>
-                    <!-- 卡片 A: 视觉与磨砂 (实时所见即所得) -->
+                    <!-- 卡片 A: 视觉美学 (实时所见即所得) -->
                     <Border Style="{StaticResource TechCard}">
                         <StackPanel>
-                            <TextBlock Text="🎨 视觉美学与质感 (实时生效)" FontWeight="SemiBold" Foreground="#38BDF8" Margin="0,0,0,12"/>
+                            <TextBlock Text="🎨 视觉美学与尺寸 (实时生效)" FontWeight="SemiBold" Foreground="#38BDF8" Margin="0,0,0,12"/>
 
-                            <!-- 毛玻璃开关 -->
-                            <CheckBox x:Name="ChkAcrylic" Content="启用 Windows 11 亚克力磨砂毛玻璃 (Acrylic Blur)" 
-                                      Foreground="#E2E8F0" IsChecked="True" Margin="0,0,0,14" 
-                                      Click="SettingControl_Changed"/>
-
-                            <!-- 背景透明度 -->
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="80"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="45"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="透明度:"/>
-                                <Slider Grid.Column="1" x:Name="SliderOpacity" Minimum="0.1" Maximum="1.0" Value="0.75" 
-                                        SmallChange="0.05" LargeChange="0.1" ValueChanged="SettingControl_Changed"/>
-                                <TextBlock Grid.Column="2" Text="{Binding Value, ElementName=SliderOpacity, StringFormat={}{0:P0}}" 
-                                           HorizontalAlignment="Right" Foreground="#38BDF8" FontWeight="SemiBold"/>
-                            </Grid>
-
-                            <!-- 图标尺寸缩放 -->
+                            <!-- 图标尺寸缩放 (实时联动) -->
                             <Grid Margin="0,0,0,14">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="80"/>
@@ -144,6 +125,20 @@
                                 <Slider Grid.Column="1" x:Name="SliderIconSize" Minimum="28" Maximum="64" Value="40" 
                                         SmallChange="2" LargeChange="4" ValueChanged="SettingControl_Changed"/>
                                 <TextBlock Grid.Column="2" Text="{Binding Value, ElementName=SliderIconSize, StringFormat={}{0:0}px}" 
+                                           HorizontalAlignment="Right" Foreground="#38BDF8" FontWeight="SemiBold"/>
+                            </Grid>
+
+                            <!-- 背景透明度 -->
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="45"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="透明度:"/>
+                                <Slider Grid.Column="1" x:Name="SliderOpacity" Minimum="0.1" Maximum="1.0" Value="0.85" 
+                                        SmallChange="0.05" LargeChange="0.1" ValueChanged="SettingControl_Changed"/>
+                                <TextBlock Grid.Column="2" Text="{Binding Value, ElementName=SliderOpacity, StringFormat={}{0:P0}}" 
                                            HorizontalAlignment="Right" Foreground="#38BDF8" FontWeight="SemiBold"/>
                             </Grid>
 
@@ -209,15 +204,15 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- 卡片 C: 系统与云端状态 (彻底隐去个人 GitHub 账号，纯粹专业更新) -->
+                    <!-- 卡片 C: 系统与在线智能升级 -->
                     <Border Style="{StaticResource TechCard}">
                         <StackPanel>
-                            <TextBlock Text="🚀 系统状态与云端维护" FontWeight="SemiBold" Foreground="#38BDF8" Margin="0,0,0,12"/>
+                            <TextBlock Text="🚀 系统状态与智能更新" FontWeight="SemiBold" Foreground="#38BDF8" Margin="0,0,0,12"/>
 
                             <CheckBox x:Name="ChkAutoStart" Content="开机时自动静默启动 TaskDock 11" 
                                       Foreground="#E2E8F0" Margin="0,0,0,12"/>
 
-                            <Grid Background="#1E242E" Margin="0,0,0,0">
+                            <Grid Background="#1E242E">
                                 <Border CornerRadius="8" Padding="10,8">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -225,10 +220,10 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="当前版本: v1.0.0 (正式版)" Foreground="#F8FAFC" FontSize="12" FontWeight="SemiBold"/>
-                                            <TextBlock Text="云端更新通道已就绪 · 随时检测新特性" Foreground="#64748B" FontSize="11" Margin="0,2,0,0"/>
+                                            <TextBlock Text="当前版本: v1.0.1 (最新版)" Foreground="#F8FAFC" FontSize="12" FontWeight="SemiBold"/>
+                                            <TextBlock Text="支持全自动无感静默在线更新" Foreground="#64748B" FontSize="11" Margin="0,2,0,0"/>
                                         </StackPanel>
-                                        <Button Grid.Column="1" Content="⚡ 检查新版本" Padding="12,6" 
+                                        <Button Grid.Column="1" Content="⚡ 智能检查更新" Padding="12,6" 
                                                 Background="#0284C7" Foreground="#FFFFFF" BorderThickness="0" 
                                                 Cursor="Hand" FontWeight="SemiBold" FontSize="12"
                                                 Click="BtnCheckUpdate_Click">

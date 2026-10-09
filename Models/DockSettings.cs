@@ -1,4 +1,6 @@
 using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace TaskDock11.Models
 {
@@ -18,27 +20,97 @@ namespace TaskDock11.Models
         AutoHide = 2         // 自动隐藏
     }
 
-    public class DockSettings
+    public class DockSettings : INotifyPropertyChanged
     {
-        // 视觉外观
-        public string BackgroundColorHex { get; set; } = "#0F172A";
-        public double BackgroundOpacity { get; set; } = 0.75;
-        public bool EnableAcrylicBlur { get; set; } = true;
-        public double CornerRadius { get; set; } = 16.0;
-        public double IconSize { get; set; } = 40.0; // 默认 40px，范围 28~64
+        private string _backgroundColorHex = "#0F172A";
+        private double _backgroundOpacity = 0.85;
+        private double _cornerRadius = 16.0;
+        private double _iconSize = 40.0;
+        private DockEdge _edge = DockEdge.Bottom;
+        private CoexistMode _coexist = CoexistMode.Topmost;
+        private double _floatLeft = 300;
+        private double _floatTop = 800;
+        private bool _autoStartWithWindows = false;
+        private string _gitHubRepoOwner = "100142armin-lgtm";
+        private string _gitHubRepoName = "TaskDock11";
+        private string _currentVersion = "v1.0.1";
 
-        // 停靠与行为
-        public DockEdge Edge { get; set; } = DockEdge.Bottom;
-        public CoexistMode Coexist { get; set; } = CoexistMode.Topmost;
-        public double FloatLeft { get; set; } = 300;
-        public double FloatTop { get; set; } = 800;
+        public string BackgroundColorHex
+        {
+            get => _backgroundColorHex;
+            set { _backgroundColorHex = value; OnPropertyChanged(); }
+        }
 
-        // 系统设置
-        public bool AutoStartWithWindows { get; set; } = false;
+        public double BackgroundOpacity
+        {
+            get => _backgroundOpacity;
+            set { _backgroundOpacity = value; OnPropertyChanged(); }
+        }
 
-        // 团队与更新
-        public string GitHubRepoOwner { get; set; } = "100142armin-lgtm";
-        public string GitHubRepoName { get; set; } = "TaskDock11";
-        public string CurrentVersion { get; set; } = "v1.0.0";
+        public double CornerRadius
+        {
+            get => _cornerRadius;
+            set { _cornerRadius = value; OnPropertyChanged(); }
+        }
+
+        public double IconSize
+        {
+            get => _iconSize;
+            set { _iconSize = value; OnPropertyChanged(); }
+        }
+
+        public DockEdge Edge
+        {
+            get => _edge;
+            set { _edge = value; OnPropertyChanged(); }
+        }
+
+        public CoexistMode Coexist
+        {
+            get => _coexist;
+            set { _coexist = value; OnPropertyChanged(); }
+        }
+
+        public double FloatLeft
+        {
+            get => _floatLeft;
+            set { _floatLeft = value; OnPropertyChanged(); }
+        }
+
+        public double FloatTop
+        {
+            get => _floatTop;
+            set { _floatTop = value; OnPropertyChanged(); }
+        }
+
+        public bool AutoStartWithWindows
+        {
+            get => _autoStartWithWindows;
+            set { _autoStartWithWindows = value; OnPropertyChanged(); }
+        }
+
+        public string GitHubRepoOwner
+        {
+            get => _gitHubRepoOwner;
+            set { _gitHubRepoOwner = value; OnPropertyChanged(); }
+        }
+
+        public string GitHubRepoName
+        {
+            get => _gitHubRepoName;
+            set { _gitHubRepoName = value; OnPropertyChanged(); }
+        }
+
+        public string CurrentVersion
+        {
+            get => _currentVersion;
+            set { _currentVersion = value; OnPropertyChanged(); }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string? propName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+        }
     }
 }

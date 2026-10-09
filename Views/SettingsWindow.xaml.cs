@@ -20,12 +20,11 @@ namespace TaskDock11.Views
             _mainWindow = mainWindow;
             _viewModel = viewModel;
 
-            // 克隆原始配置（用于取消时完美复原）
+            // 克隆原始配置
             _originalSettings = new DockSettings
             {
                 BackgroundColorHex = _viewModel.Settings.BackgroundColorHex,
                 BackgroundOpacity = _viewModel.Settings.BackgroundOpacity,
-                EnableAcrylicBlur = _viewModel.Settings.EnableAcrylicBlur,
                 IconSize = _viewModel.Settings.IconSize,
                 CornerRadius = _viewModel.Settings.CornerRadius,
                 Edge = _viewModel.Settings.Edge,
@@ -48,7 +47,6 @@ namespace TaskDock11.Views
         private void LoadCurrentSettings()
         {
             var s = _viewModel.Settings;
-            ChkAcrylic.IsChecked = s.EnableAcrylicBlur;
             SliderOpacity.Value = s.BackgroundOpacity;
             SliderIconSize.Value = s.IconSize;
             TxtBgColor.Text = s.BackgroundColorHex;
@@ -57,9 +55,6 @@ namespace TaskDock11.Views
             ChkAutoStart.IsChecked = s.AutoStartWithWindows;
         }
 
-        /// <summary>
-        /// 实时联动：任何控件发生变化，主窗口立刻实时渲染
-        /// </summary>
         private void SettingControl_Changed(object sender, RoutedEventArgs e)
         {
             if (_isInitializing) return;
@@ -84,9 +79,8 @@ namespace TaskDock11.Views
         private void ApplyLivePreview()
         {
             var s = _viewModel.Settings;
-            s.EnableAcrylicBlur = ChkAcrylic.IsChecked == true;
             s.BackgroundOpacity = SliderOpacity.Value;
-            s.IconSize = SliderIconSize.Value;
+            s.IconSize = SliderIconSize.Value; // 触发 DockSettings 的 PropertyChanged，图标实时动态缩放！
 
             string colorText = TxtBgColor.Text.Trim();
             if (!colorText.StartsWith("#")) colorText = "#" + colorText;
@@ -118,7 +112,6 @@ namespace TaskDock11.Views
             var s = _viewModel.Settings;
             s.BackgroundColorHex = _originalSettings.BackgroundColorHex;
             s.BackgroundOpacity = _originalSettings.BackgroundOpacity;
-            s.EnableAcrylicBlur = _originalSettings.EnableAcrylicBlur;
             s.IconSize = _originalSettings.IconSize;
             s.CornerRadius = _originalSettings.CornerRadius;
             s.Edge = _originalSettings.Edge;
@@ -136,8 +129,7 @@ namespace TaskDock11.Views
 
         private void BtnResetDefault_Click(object sender, RoutedEventArgs e)
         {
-            ChkAcrylic.IsChecked = true;
-            SliderOpacity.Value = 0.75;
+            SliderOpacity.Value = 0.85;
             SliderIconSize.Value = 40;
             TxtBgColor.Text = "#0F172A";
             CmbEdge.SelectedIndex = (int)DockEdge.Bottom;

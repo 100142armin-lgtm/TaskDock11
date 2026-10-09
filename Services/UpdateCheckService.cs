@@ -1,10 +1,12 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
+using TaskDock11.Views;
 
 namespace TaskDock11.Services
 {
@@ -14,16 +16,8 @@ namespace TaskDock11.Services
 
         public async Task CheckForUpdatesAsync(string owner, string repo, string currentVersion, bool showPromptIfLatest = false)
         {
-            if (string.IsNullOrWhiteSpace(owner) || string.IsNullOrWhiteSpace(repo) || owner == "YourOrgOrUser")
+            if (string.IsNullOrWhiteSpace(owner) || string.IsNullOrWhiteSpace(repo))
             {
-                if (showPromptIfLatest)
-                {
-                    MessageBox.Show(
-                        "请在设置中配置正确的 GitHub 仓库所有者和仓库名称，即可开启团队自动更新检测！",
-                        "TaskDock 11 更新提示",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
-                }
                 return;
             }
 
@@ -38,7 +32,7 @@ namespace TaskDock11.Services
                 {
                     if (showPromptIfLatest)
                     {
-                        MessageBox.Show($"检测更新失败，GitHub 返回状态码: {response.StatusCode}", "更新检测", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        MessageBox.Show($"检测更新未响应 (状态码: {response.StatusCode})", "更新检测", MessageBoxButton.OK, MessageBoxImage.Warning);
                     }
                     return;
                 }
@@ -51,33 +45,55 @@ namespace TaskDock11.Services
                 string releaseUrl = root.GetProperty("html_url").GetString() ?? "";
                 string releaseNotes = root.TryGetProperty("body", out var bodyProp) ? (bodyProp.GetString() ?? "") : "";
 
+                // 寻找打包的 exe 下载链接
+                string? directExeDownloadUrl = null;
+                if (root.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var asset in assets.EnumerateArray())
+                    {
+                        string name = asset.GetProperty("name").GetString() ?? "";
+                        if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                        {
+                            directExeDownloadUrl = asset.GetProperty("browser_download_url").GetString();
+                            break;
+                        }
+                    }
+                }
+
                 if (!string.IsNullOrEmpty(latestTag) && !string.Equals(latestTag.Trim('v', 'V'), currentVersion.Trim('v', 'V'), StringComparison.OrdinalIgnoreCase))
                 {
                     var result = MessageBox.Show(
-                        $"发现新版本: {latestTag}（当前版本: {currentVersion}）！\n\n更新内容说明:\n{releaseNotes}\n\n是否立即前往下载最新版？",
-                        "TaskDock 11 版本更新提醒",
+                        $"发现新版本: {latestTag}（当前版本: {currentVersion}）！\n\n更新说明:\n{releaseNotes}\n\n是否立即一键自动下载并无感升级？",
+                        "TaskDock 11 在线升级提示",
                         MessageBoxButton.YesNo,
                         MessageBoxImage.Information);
 
-                    if (result == MessageBoxResult.Yes && !string.IsNullOrEmpty(releaseUrl))
+                    if (result == MessageBoxResult.Yes)
                     {
-                        Process.Start(new ProcessStartInfo
+                        string? currentExePath = Environment.ProcessPath;
+                        if (!string.IsNullOrEmpty(directExeDownloadUrl) && !string.IsNullOrEmpty(currentExePath))
                         {
-                            FileName = releaseUrl,
-                            UseShellExecute = true
-                        });
+                            // 启动应用内智能下载与自动替换
+                            var progressWin = new UpdateProgressWindow(directExeDownloadUrl, currentExePath);
+                            progressWin.ShowDialog();
+                        }
+                        else if (!string.IsNullOrEmpty(releaseUrl))
+                        {
+                            // 兜底打开网页
+                            Process.Start(new ProcessStartInfo { FileName = releaseUrl, UseShellExecute = true });
+                        }
                     }
                 }
                 else if (showPromptIfLatest)
                 {
-                    MessageBox.Show($"当前已是最新版本 ({currentVersion})！", "TaskDock 11", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show($"当前已是最新版本 ({currentVersion})，无需更新！", "TaskDock 11", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
             {
                 if (showPromptIfLatest)
                 {
-                    MessageBox.Show($"网络连接异常，无法连接到 GitHub: {ex.Message}", "更新检测", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($"连接云端更新服务失败: {ex.Message}", "更新检测", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
