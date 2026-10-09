@@ -34,13 +34,89 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
 
-        <!-- 下拉框样式 -->
-        <Style TargetType="ComboBox">
-            <Setter Property="Background" Value="#1F2937"/>
-            <Setter Property="Foreground" Value="#F8FAFC"/>
-            <Setter Property="BorderBrush" Value="#374151"/>
-            <Setter Property="Padding" Value="8,5"/>
+        <!-- 下拉菜单项样式 -->
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="Padding" Value="10,6"/>
             <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="ItemBd" CornerRadius="6" Background="{TemplateBinding Background}" 
+                                Padding="{TemplateBinding Padding}" Margin="2,1">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ItemBd" Property="Background" Value="#252D3D"/>
+                                <Setter Property="Foreground" Value="#38BDF8"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBd" Property="Background" Value="#0284C7"/>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 科技暗黑 ComboBox 完整控件模板 (彻底杜绝系统白底白字) -->
+        <Style TargetType="ComboBox">
+            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton x:Name="ToggleButton" 
+                                          ClickMode="Press" Focusable="False"
+                                          IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border x:Name="Bd" Background="#1F2937" BorderBrush="#374151" BorderThickness="1" CornerRadius="6" Padding="10,6">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="20"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="1" Text="▼" FontSize="9" Foreground="#94A3B8" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#38BDF8"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <ContentPresenter Name="ContentSite" IsHitTestVisible="False" 
+                                              Content="{TemplateBinding SelectionBoxItem}" 
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" 
+                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" 
+                                              Margin="10,6,28,6" VerticalAlignment="Center"/>
+                            <Popup Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" 
+                                   AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
+                                <Grid Name="DropDown" SnapsToDevicePixels="True" 
+                                      MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <Border x:Name="DropDownBorder" Background="#161B22" BorderBrush="#384152" BorderThickness="1" 
+                                            CornerRadius="8" Margin="0,3,0,6" Padding="4">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="16" ShadowDepth="4" Opacity="0.6" Color="#000000"/>
+                                        </Border.Effect>
+                                        <ScrollViewer SnapsToDevicePixels="True">
+                                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained" />
+                                        </ScrollViewer>
+                                    </Border>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <!-- 预设色块按钮样式 -->
@@ -128,6 +204,20 @@
                                            HorizontalAlignment="Right" Foreground="#38BDF8" FontWeight="SemiBold"/>
                             </Grid>
 
+                            <!-- 每行图标数 (超出自动换行双行/多行展示) -->
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="55"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="每行图标:"/>
+                                <Slider Grid.Column="1" x:Name="SliderPerRow" Minimum="6" Maximum="24" Value="12" 
+                                        SmallChange="1" LargeChange="2" ValueChanged="SettingControl_Changed"/>
+                                <TextBlock Grid.Column="2" Text="{Binding Value, ElementName=SliderPerRow, StringFormat={}{0:0}个/行}" 
+                                           HorizontalAlignment="Right" Foreground="#38BDF8" FontWeight="SemiBold"/>
+                            </Grid>
+
                             <!-- 背景透明度 -->
                             <Grid Margin="0,0,0,14">
                                 <Grid.ColumnDefinitions>
@@ -142,7 +232,7 @@
                                            HorizontalAlignment="Right" Foreground="#38BDF8" FontWeight="SemiBold"/>
                             </Grid>
 
-                            <!-- 背景色与预设色盘 -->
+                            <!-- 背景色与预设色盘 (扩充至 16 款精选全色系色球) -->
                             <Grid Margin="0,0,0,4">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="80"/>
@@ -150,15 +240,24 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="面板色调:"/>
                                 <StackPanel Grid.Column="1">
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                        <!-- 质感科技色盘快捷球 -->
+                                    <WrapPanel Margin="0,0,0,8">
                                         <Button Style="{StaticResource ColorBall}" Background="#0F172A" Click="PresetColor_Click" Tag="#0F172A" ToolTip="黑曜石深空"/>
+                                        <Button Style="{StaticResource ColorBall}" Background="#020617" Click="PresetColor_Click" Tag="#020617" ToolTip="虚空纯夜黑"/>
+                                        <Button Style="{StaticResource ColorBall}" Background="#18181B" Click="PresetColor_Click" Tag="#18181B" ToolTip="钛金碳灰"/>
+                                        <Button Style="{StaticResource ColorBall}" Background="#334155" Click="PresetColor_Click" Tag="#334155" ToolTip="莫兰迪板岩灰"/>
                                         <Button Style="{StaticResource ColorBall}" Background="#1E1B4B" Click="PresetColor_Click" Tag="#1E1B4B" ToolTip="赛博深紫"/>
+                                        <Button Style="{StaticResource ColorBall}" Background="#2E1065" Click="PresetColor_Click" Tag="#2E1065" ToolTip="银河幽紫"/>
                                         <Button Style="{StaticResource ColorBall}" Background="#082F49" Click="PresetColor_Click" Tag="#082F49" ToolTip="星舰深蓝"/>
+                                        <Button Style="{StaticResource ColorBall}" Background="#0C4A6E" Click="PresetColor_Click" Tag="#0C4A6E" ToolTip="远洋深蓝"/>
+                                        <Button Style="{StaticResource ColorBall}" Background="#172554" Click="PresetColor_Click" Tag="#172554" ToolTip="皇家暗蓝"/>
                                         <Button Style="{StaticResource ColorBall}" Background="#022C22" Click="PresetColor_Click" Tag="#022C22" ToolTip="极光墨绿"/>
-                                        <Button Style="{StaticResource ColorBall}" Background="#18181B" Click="PresetColor_Click" Tag="#18181B" ToolTip="钛金碳黑"/>
+                                        <Button Style="{StaticResource ColorBall}" Background="#064E3B" Click="PresetColor_Click" Tag="#064E3B" ToolTip="冷杉暗绿"/>
+                                        <Button Style="{StaticResource ColorBall}" Background="#134E4A" Click="PresetColor_Click" Tag="#134E4A" ToolTip="赛博青雀"/>
                                         <Button Style="{StaticResource ColorBall}" Background="#3F151E" Click="PresetColor_Click" Tag="#3F151E" ToolTip="炽火暗红"/>
-                                    </StackPanel>
+                                        <Button Style="{StaticResource ColorBall}" Background="#4C0519" Click="PresetColor_Click" Tag="#4C0519" ToolTip="暗夜酒红"/>
+                                        <Button Style="{StaticResource ColorBall}" Background="#451A03" Click="PresetColor_Click" Tag="#451A03" ToolTip="琥珀暗咖"/>
+                                        <Button Style="{StaticResource ColorBall}" Background="#000000" Click="PresetColor_Click" Tag="#000000" ToolTip="绝对纯黑"/>
+                                    </WrapPanel>
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="HEX 颜色: " VerticalAlignment="Center" Margin="0,0,6,0" FontSize="11"/>
                                         <TextBox x:Name="TxtBgColor" Width="90" Background="#1F2937" Foreground="#F8FAFC" 

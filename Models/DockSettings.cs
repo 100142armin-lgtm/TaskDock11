@@ -26,14 +26,15 @@ namespace TaskDock11.Models
         private double _backgroundOpacity = 0.85;
         private double _cornerRadius = 16.0;
         private double _iconSize = 40.0;
-        private DockEdge _edge = DockEdge.Bottom;
+        private int _maxItemsPerRow = 12;
+        private DockEdge _edge = DockEdge.Float;
         private CoexistMode _coexist = CoexistMode.Topmost;
-        private double _floatLeft = 300;
-        private double _floatTop = 800;
+        private double _floatLeft = -1;
+        private double _floatTop = -1;
         private bool _autoStartWithWindows = false;
         private string _gitHubRepoOwner = "100142armin-lgtm";
         private string _gitHubRepoName = "TaskDock11";
-        private string _currentVersion = "v1.0.1";
+        private string _currentVersion = "v1.0.2";
 
         public string BackgroundColorHex
         {
@@ -56,8 +57,26 @@ namespace TaskDock11.Models
         public double IconSize
         {
             get => _iconSize;
-            set { _iconSize = value; OnPropertyChanged(); }
+            set 
+            { 
+                _iconSize = value; 
+                OnPropertyChanged(); 
+                OnPropertyChanged(nameof(WrapMaxWidth)); 
+            }
         }
+
+        public int MaxItemsPerRow
+        {
+            get => _maxItemsPerRow;
+            set 
+            { 
+                _maxItemsPerRow = value; 
+                OnPropertyChanged(); 
+                OnPropertyChanged(nameof(WrapMaxWidth)); 
+            }
+        }
+
+        public double WrapMaxWidth => (MaxItemsPerRow > 0 ? MaxItemsPerRow : 12) * (IconSize + 18) + 4;
 
         public DockEdge Edge
         {

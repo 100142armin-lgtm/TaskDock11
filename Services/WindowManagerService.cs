@@ -60,6 +60,8 @@ namespace TaskDock11.Services
             _selfHwnd = selfHwnd;
         }
 
+        private IntPtr _lastForegroundHwnd = IntPtr.Zero;
+
         private void WinEventProc(IntPtr hWinEventHook, uint eventType, IntPtr hWnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime)
         {
             if (hWnd == IntPtr.Zero || hWnd == _selfHwnd) return;
@@ -68,6 +70,7 @@ namespace TaskDock11.Services
             {
                 if (eventType == NativeMethods.EVENT_SYSTEM_FOREGROUND)
                 {
+                    _lastForegroundHwnd = hWnd;
                     ActiveWindowChanged?.Invoke(hWnd);
                 }
                 else
@@ -90,13 +93,10 @@ namespace TaskDock11.Services
                 if (hWnd == _selfHwnd) return true;
                 if (!IsAltTabWindow(hWnd)) return true;
 
-                // 提取标题
-                int len = NativeMethods.GetWindowTextLength(hWnd);
-                if (len <= 0) return true;
-                var sb = new StringBuilder(len + 1);
+                // 提取标题 (支持浏览器等复杂动态标题并平滑回退)
+                var sb = new StringBuilder(512);
                 NativeMethods.GetWindowText(hWnd, sb, sb.Capacity);
                 string title = sb.ToString().Trim();
-                if (string.IsNullOrEmpty(title)) return true;
 
                 // 获取进程信息
                 NativeMethods.GetWindowThreadProcessId(hWnd, out uint pid);
@@ -108,6 +108,23 @@ namespace TaskDock11.Services
                     processName = proc.ProcessName;
                 }
                 catch { }
+
+                if (string.IsNullOrEmpty(title))
+                {
+                    if (!string.IsNullOrEmpty(processName))
+                    {
+                        title = processName;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+                else
+                {
+                    // 智能提炼浏览器标题：剥除 - Google Chrome / - Microsoft Edge 等冗余尾巴，只保留网页核心标题！
+                    title = CleanBrowserTitle(title, processName);
+                }
 
                 // 提取图标
                 var icon = IconHelper.GetWindowIcon(hWnd, processId);
@@ -122,11 +139,77 @@ namespace TaskDock11.Services
                     IsActive = (hWnd == currentForeground)
                 };
 
+                // 人性化通讯软件未读消息角标与在线会议状态检测
+                DetectNotificationAndMeeting(item);
+
                 result.Add(item);
                 return true;
             }, IntPtr.Zero);
 
             return result;
+        }
+
+        private static string CleanBrowserTitle(string title, string processName)
+        {
+            if (string.IsNullOrWhiteSpace(title)) return title;
+            string pLower = processName.ToLowerInvariant();
+            if (pLower.Contains("chrome") || pLower.Contains("edge") || pLower.Contains("brave") || pLower.Contains("firefox") || pLower.Contains("opera"))
+            {
+                string[] browserSuffixes = new[] 
+                { 
+                    " - Google Chrome", 
+                    " - Microsoft​ Edge", 
+                    " - Microsoft Edge", 
+                    " - 个人 - Microsoft​ Edge",
+                    " - 个人 - Microsoft Edge",
+                    " - Mozilla Firefox", 
+                    " - Brave" 
+                };
+                foreach (var suffix in browserSuffixes)
+                {
+                    if (title.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return title.Substring(0, title.Length - suffix.Length).Trim();
+                    }
+                }
+            }
+            return title;
+        }
+
+        private static void DetectNotificationAndMeeting(WindowItem item)
+        {
+            string pLower = item.ProcessName.ToLowerInvariant();
+            string title = item.Title;
+
+            // 1. 通讯软件 (微信、企业微信、钉钉、飞书、QQ、Teams、Slack 等)
+            bool isChatApp = pLower.Contains("wechat") || pLower.Contains("wxwork") || pLower.Contains("dingtalk") ||
+                             pLower.Contains("qq") || pLower.Contains("teams") || pLower.Contains("slack") ||
+                             pLower.Contains("feishu") || pLower.Contains("lark") || pLower.Contains("telegram");
+
+            if (isChatApp)
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(title, @"[\(\[](?<cnt>\d+\+?)[\)\]]");
+                if (match.Success)
+                {
+                    item.HasNotification = true;
+                    item.NotificationText = match.Groups["cnt"].Value;
+                }
+                else if (title.Contains("新消息") || title.Contains("未读"))
+                {
+                    item.HasNotification = true;
+                    item.NotificationText = "!";
+                }
+            }
+
+            // 2. 在线会议软件 (腾讯会议、Zoom、Teams 等)
+            bool isMeetingApp = pLower.Contains("wemeet") || pLower.Contains("zoom") || pLower.Contains("meeting") || pLower.Contains("voov");
+            if (isMeetingApp || pLower.Contains("teams"))
+            {
+                if (title.Contains("会议") || title.Contains("Meeting") || title.Contains("正在共享") || title.Contains("通话"))
+                {
+                    item.IsInMeeting = true;
+                }
+            }
         }
 
         /// <summary>
@@ -177,31 +260,76 @@ namespace TaskDock11.Services
         }
 
         /// <summary>
-        /// 点击激活或最小化窗口（对标原生任务栏逻辑）
+        /// 工业级激活或最小化窗口（单击还原显示，再单击最小化收回）
         /// </summary>
-        public void ToggleWindow(IntPtr hWnd)
+        public void ToggleWindow(WindowItem item)
         {
-            if (hWnd == IntPtr.Zero) return;
+            if (item == null || item.HWnd == IntPtr.Zero) return;
+            IntPtr hWnd = item.HWnd;
 
             IntPtr fg = NativeMethods.GetForegroundWindow();
-            if (fg == hWnd)
+            
+            // 判定当前窗口是否正处于最前台活动状态：
+            bool isAlreadyActive = (fg == hWnd) || item.IsActive || (_lastForegroundHwnd == hWnd);
+
+            if (isAlreadyActive && !NativeMethods.IsIconic(hWnd))
             {
-                // 当前已经在最前台 -> 最小化
+                // 已经在最前台 -> 缩小收起回去 (最小化)
                 NativeMethods.ShowWindow(hWnd, NativeMethods.SW_SHOWMINIMIZED);
+                item.IsActive = false;
+                _lastForegroundHwnd = IntPtr.Zero;
+                return;
+            }
+
+            // 还原并放大显示出来
+            if (NativeMethods.IsIconic(hWnd))
+            {
+                NativeMethods.ShowWindow(hWnd, NativeMethods.SW_RESTORE);
             }
             else
             {
-                // 未激活 -> 还原并置顶激活
-                if (NativeMethods.IsIconic(hWnd))
-                {
-                    NativeMethods.ShowWindow(hWnd, NativeMethods.SW_RESTORE);
-                }
-                else
-                {
-                    NativeMethods.ShowWindow(hWnd, NativeMethods.SW_SHOWNORMAL);
-                }
-                NativeMethods.SetForegroundWindow(hWnd);
+                NativeMethods.ShowWindow(hWnd, NativeMethods.SW_SHOWNORMAL);
             }
+
+            // 破解 Windows Foreground Lock 并置顶
+            uint fgThread = NativeMethods.GetWindowThreadProcessId(fg, out _);
+            uint curThread = NativeMethods.GetCurrentThreadId();
+            uint targetThread = NativeMethods.GetWindowThreadProcessId(hWnd, out _);
+
+            if (fgThread != 0 && fgThread != curThread)
+            {
+                NativeMethods.AttachThreadInput(curThread, fgThread, true);
+            }
+            if (targetThread != 0 && targetThread != curThread)
+            {
+                NativeMethods.AttachThreadInput(curThread, targetThread, true);
+            }
+
+            NativeMethods.keybd_event(0x12, 0, 0, 0);
+            NativeMethods.keybd_event(0x12, 0, 2, 0);
+
+            NativeMethods.SetWindowPos(hWnd, NativeMethods.HWND_TOP, 0, 0, 0, 0, NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_SHOWWINDOW);
+            NativeMethods.SetForegroundWindow(hWnd);
+            NativeMethods.BringWindowToTop(hWnd);
+            NativeMethods.SwitchToThisWindow(hWnd, true);
+
+            if (fgThread != 0 && fgThread != curThread)
+            {
+                NativeMethods.AttachThreadInput(curThread, fgThread, false);
+            }
+            if (targetThread != 0 && targetThread != curThread)
+            {
+                NativeMethods.AttachThreadInput(curThread, targetThread, false);
+            }
+
+            item.IsActive = true;
+            _lastForegroundHwnd = hWnd;
+        }
+
+        public void ToggleWindow(IntPtr hWnd)
+        {
+            var dummyItem = new WindowItem { HWnd = hWnd, IsActive = (_lastForegroundHwnd == hWnd) };
+            ToggleWindow(dummyItem);
         }
 
         /// <summary>

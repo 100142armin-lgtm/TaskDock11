@@ -8,4 +8,10 @@
 .vs/
 .vscode/
 *.nupkg
-TaskDock11.exe.log
+*.log
+*.exe
+*.dll
+*.pdb
+publish/
+dist/
+publish_standalone/

@@ -17,7 +17,6 @@ namespace TaskDock11
     {
         private readonly MainViewModel _viewModel;
         private readonly AppBarService _appBarService;
-        private Point _dragStartPoint;
         private bool _isDraggingItem = false;
         private DispatcherTimer _autoHideTimer;
         private bool _isTemporarilyHidden = false;
@@ -80,6 +79,9 @@ namespace TaskDock11
 
             // 2. 屏幕并存与置顶
             Topmost = (s.Coexist == CoexistMode.Topmost || s.Coexist == CoexistMode.AutoHide);
+
+            // 3. 动态多行折行宽度约束
+            WindowsList.MaxWidth = s.WrapMaxWidth;
         }
 
         /// <summary>
@@ -123,10 +125,18 @@ namespace TaskDock11
                     break;
                 case DockEdge.Float:
                 default:
-                    if (s.FloatLeft > 0 && s.FloatTop > 0)
+                    if (s.FloatLeft >= 0 && s.FloatTop >= 0)
                     {
                         Left = s.FloatLeft;
                         Top = s.FloatTop;
+                    }
+                    else
+                    {
+                        // 首次启动默认显示在屏幕正中心！
+                        double w = ActualWidth > 0 ? ActualWidth : 420;
+                        double h = ActualHeight > 0 ? ActualHeight : 64;
+                        Left = Math.Max(30, (screenW - w) / 2);
+                        Top = Math.Max(30, (screenH - h) / 2);
                     }
                     break;
             }
@@ -134,11 +144,24 @@ namespace TaskDock11
 
         #region 窗口拖拽与自动隐藏
 
-        private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void DragHandle_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (_viewModel.Settings.Edge == DockEdge.Float && e.ButtonState == MouseButtonState.Pressed)
+            if (e.ButtonState == MouseButtonState.Pressed)
             {
                 DragMove();
+                _viewModel.Settings.Edge = DockEdge.Float;
+                _viewModel.Settings.FloatLeft = Left;
+                _viewModel.Settings.FloatTop = Top;
+                _viewModel.SaveSettings();
+            }
+        }
+
+        private void MainShell_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.OriginalSource == MainShell && e.ButtonState == MouseButtonState.Pressed)
+            {
+                DragMove();
+                _viewModel.Settings.Edge = DockEdge.Float;
                 _viewModel.Settings.FloatLeft = Left;
                 _viewModel.Settings.FloatTop = Top;
                 _viewModel.SaveSettings();
@@ -191,30 +214,45 @@ namespace TaskDock11
 
         #region 应用图标交互、拖拽排序与拖拽分组 (模式 C)
 
-        private void Item_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        private Point _itemMouseDownPos;
+        private bool _dragThresholdPassed = false;
+        private bool _isItemPressed = false;
+
+        private void Item_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (_isDraggingItem) return;
-            if (sender is FrameworkElement elem && elem.DataContext is WindowItem item)
+            _itemMouseDownPos = e.GetPosition(this);
+            _dragThresholdPassed = false;
+            _isDraggingItem = false;
+            _isItemPressed = true;
+        }
+
+        private void Item_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (_isItemPressed && !_dragThresholdPassed && !_isDraggingItem)
             {
-                _viewModel.HandleWindowClick(item);
+                _isItemPressed = false;
+                if (sender is FrameworkElement elem && elem.DataContext is WindowItem item)
+                {
+                    _viewModel.HandleWindowClick(item);
+                    e.Handled = true;
+                }
             }
+            _isItemPressed = false;
         }
 
         private void Item_MouseMove(object sender, MouseEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed && sender is FrameworkElement elem && elem.DataContext is WindowItem item)
+            if (_isItemPressed && e.LeftButton == MouseButtonState.Pressed && sender is FrameworkElement elem && elem.DataContext is WindowItem item)
             {
-                var currentPos = e.GetPosition(null);
-                if (Math.Abs(currentPos.X - _dragStartPoint.X) > 10 || Math.Abs(currentPos.Y - _dragStartPoint.Y) > 10)
+                var currentPos = e.GetPosition(this);
+                if (!_dragThresholdPassed && (Math.Abs(currentPos.X - _itemMouseDownPos.X) > 16 || Math.Abs(currentPos.Y - _itemMouseDownPos.Y) > 16))
                 {
+                    _dragThresholdPassed = true;
                     _isDraggingItem = true;
                     DragDrop.DoDragDrop(elem, item, DragDropEffects.Move | DragDropEffects.Link);
                     _isDraggingItem = false;
+                    _isItemPressed = false;
                 }
-            }
-            else if (e.LeftButton == MouseButtonState.Released)
-            {
-                _dragStartPoint = e.GetPosition(null);
             }
         }
 
@@ -304,6 +342,43 @@ namespace TaskDock11
                         _viewModel.Windows.Insert(idx, child);
                     }
                 }
+            }
+        }
+
+        private void MenuItemRename_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem mi && mi.DataContext is WindowItem item)
+            {
+                var dlg = new RenameDialog(item.DisplayTitle)
+                {
+                    Owner = this
+                };
+                if (dlg.ShowDialog() == true && !string.IsNullOrWhiteSpace(dlg.ResultName))
+                {
+                    _viewModel.SetCustomName(item, dlg.ResultName);
+                }
+            }
+        }
+
+        private void MenuItemHide_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem mi && mi.DataContext is WindowItem item)
+            {
+                _viewModel.HideWindow(item);
+            }
+        }
+
+        private void MenuRestoreHidden_Click(object sender, RoutedEventArgs e)
+        {
+            int count = _viewModel.HiddenCount;
+            _viewModel.RestoreAllHiddenWindows();
+            if (count > 0)
+            {
+                MessageBox.Show($"已恢复全部 {count} 个被隐藏的应用！", "TaskDock 11", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                MessageBox.Show("当前没有处于隐藏状态的应用。", "TaskDock 11", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 

@@ -10,6 +10,7 @@ namespace TaskDock11.Models
     {
         private IntPtr _hWnd;
         private string _title = string.Empty;
+        private string _customTitle = string.Empty;
         private ImageSource? _icon;
         private int _processId;
         private string _processName = string.Empty;
@@ -17,6 +18,11 @@ namespace TaskDock11.Models
         private bool _isGroup;
         private string _groupName = string.Empty;
         private ObservableCollection<WindowItem> _children = new();
+
+        // 智能状态增强 (通讯软件与在线会议)
+        private bool _hasNotification;
+        private string _notificationText = string.Empty;
+        private bool _isInMeeting;
 
         public IntPtr HWnd
         {
@@ -27,7 +33,28 @@ namespace TaskDock11.Models
         public string Title
         {
             get => _title;
-            set { _title = value; OnPropertyChanged(); }
+            set 
+            { 
+                _title = value; 
+                OnPropertyChanged(); 
+                OnPropertyChanged(nameof(DisplayTitle));
+            }
+        }
+
+        public string CustomTitle
+        {
+            get => _customTitle;
+            set
+            {
+                _customTitle = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(DisplayTitle));
+            }
+        }
+
+        public string DisplayTitle
+        {
+            get => !string.IsNullOrWhiteSpace(_customTitle) ? _customTitle : _title;
         }
 
         public ImageSource? Icon
@@ -64,6 +91,24 @@ namespace TaskDock11.Models
         {
             get => _groupName;
             set { _groupName = value; OnPropertyChanged(); }
+        }
+
+        public bool HasNotification
+        {
+            get => _hasNotification;
+            set { _hasNotification = value; OnPropertyChanged(); }
+        }
+
+        public string NotificationText
+        {
+            get => _notificationText;
+            set { _notificationText = value; OnPropertyChanged(); }
+        }
+
+        public bool IsInMeeting
+        {
+            get => _isInMeeting;
+            set { _isInMeeting = value; OnPropertyChanged(); }
         }
 
         public ObservableCollection<WindowItem> Children

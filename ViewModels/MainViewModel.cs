@@ -42,6 +42,51 @@ namespace TaskDock11.ViewModels
             set { _isGroupPopupOpen = value; OnPropertyChanged(); }
         }
 
+        private readonly HashSet<IntPtr> _hiddenHwnds = new();
+        private readonly Dictionary<IntPtr, string> _customNames = new();
+
+        public int HiddenCount => _hiddenHwnds.Count;
+
+        public void HideWindow(WindowItem item)
+        {
+            if (item.IsGroup)
+            {
+                foreach (var child in item.Children)
+                {
+                    _hiddenHwnds.Add(child.HWnd);
+                }
+            }
+            else
+            {
+                _hiddenHwnds.Add(item.HWnd);
+            }
+
+            Windows.Remove(item);
+            OnPropertyChanged(nameof(HiddenCount));
+        }
+
+        public void RestoreAllHiddenWindows()
+        {
+            _hiddenHwnds.Clear();
+            OnPropertyChanged(nameof(HiddenCount));
+            RefreshWindows();
+        }
+
+        public void SetCustomName(WindowItem item, string customName)
+        {
+            if (string.IsNullOrWhiteSpace(customName)) return;
+            if (item.IsGroup)
+            {
+                item.GroupName = customName;
+                item.Title = customName;
+            }
+            else
+            {
+                _customNames[item.HWnd] = customName;
+                item.CustomTitle = customName;
+            }
+        }
+
         public MainViewModel(Dispatcher dispatcher)
         {
             _settingsService = new SettingsService();
@@ -139,7 +184,7 @@ namespace TaskDock11.ViewModels
                 }
             }
 
-            // 2. 更新已有窗口的标题/激活状态，并找出新增的窗口
+            // 2. 更新已有窗口的标题/激活状态/消息通知状态，并找出新增的窗口
             var existingHwnds = new HashSet<IntPtr>();
             foreach (var item in Windows)
             {
@@ -153,10 +198,15 @@ namespace TaskDock11.ViewModels
                         {
                             child.Title = found.Title;
                             child.IsActive = found.IsActive;
+                            child.HasNotification = found.HasNotification;
+                            child.NotificationText = found.NotificationText;
+                            child.IsInMeeting = found.IsInMeeting;
                             if (child.Icon == null) child.Icon = found.Icon;
                         }
                     }
                     item.IsActive = item.Children.Any(c => c.IsActive);
+                    item.HasNotification = item.Children.Any(c => c.HasNotification);
+                    item.IsInMeeting = item.Children.Any(c => c.IsInMeeting);
                 }
                 else
                 {
@@ -166,16 +216,25 @@ namespace TaskDock11.ViewModels
                     {
                         item.Title = found.Title;
                         item.IsActive = found.IsActive;
+                        item.HasNotification = found.HasNotification;
+                        item.NotificationText = found.NotificationText;
+                        item.IsInMeeting = found.IsInMeeting;
                         if (item.Icon == null) item.Icon = found.Icon;
                     }
                 }
             }
 
-            // 3. 追加新开启的窗口
+            // 3. 追加新开启的窗口 (过滤已隐藏的应用)
             foreach (var item in activeList)
             {
+                if (_hiddenHwnds.Contains(item.HWnd)) continue;
+
                 if (!existingHwnds.Contains(item.HWnd))
                 {
+                    if (_customNames.TryGetValue(item.HWnd, out var customName))
+                    {
+                        item.CustomTitle = customName;
+                    }
                     Windows.Add(item);
                 }
             }
@@ -190,7 +249,7 @@ namespace TaskDock11.ViewModels
             }
             else
             {
-                _windowService.ToggleWindow(item.HWnd);
+                _windowService.ToggleWindow(item);
             }
         }
 

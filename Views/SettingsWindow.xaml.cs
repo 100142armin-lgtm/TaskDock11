@@ -26,6 +26,7 @@ namespace TaskDock11.Views
                 BackgroundColorHex = _viewModel.Settings.BackgroundColorHex,
                 BackgroundOpacity = _viewModel.Settings.BackgroundOpacity,
                 IconSize = _viewModel.Settings.IconSize,
+                MaxItemsPerRow = _viewModel.Settings.MaxItemsPerRow,
                 CornerRadius = _viewModel.Settings.CornerRadius,
                 Edge = _viewModel.Settings.Edge,
                 Coexist = _viewModel.Settings.Coexist,
@@ -49,6 +50,7 @@ namespace TaskDock11.Views
             var s = _viewModel.Settings;
             SliderOpacity.Value = s.BackgroundOpacity;
             SliderIconSize.Value = s.IconSize;
+            SliderPerRow.Value = s.MaxItemsPerRow > 0 ? s.MaxItemsPerRow : 12;
             TxtBgColor.Text = s.BackgroundColorHex;
             CmbEdge.SelectedIndex = (int)s.Edge;
             CmbCoexist.SelectedIndex = (int)s.Coexist;
@@ -81,6 +83,7 @@ namespace TaskDock11.Views
             var s = _viewModel.Settings;
             s.BackgroundOpacity = SliderOpacity.Value;
             s.IconSize = SliderIconSize.Value; // 触发 DockSettings 的 PropertyChanged，图标实时动态缩放！
+            s.MaxItemsPerRow = (int)SliderPerRow.Value; // 实时触发多行换行宽度更新
 
             string colorText = TxtBgColor.Text.Trim();
             if (!colorText.StartsWith("#")) colorText = "#" + colorText;
@@ -113,6 +116,7 @@ namespace TaskDock11.Views
             s.BackgroundColorHex = _originalSettings.BackgroundColorHex;
             s.BackgroundOpacity = _originalSettings.BackgroundOpacity;
             s.IconSize = _originalSettings.IconSize;
+            s.MaxItemsPerRow = _originalSettings.MaxItemsPerRow;
             s.CornerRadius = _originalSettings.CornerRadius;
             s.Edge = _originalSettings.Edge;
             s.Coexist = _originalSettings.Coexist;
@@ -131,8 +135,9 @@ namespace TaskDock11.Views
         {
             SliderOpacity.Value = 0.85;
             SliderIconSize.Value = 40;
+            SliderPerRow.Value = 12;
             TxtBgColor.Text = "#0F172A";
-            CmbEdge.SelectedIndex = (int)DockEdge.Bottom;
+            CmbEdge.SelectedIndex = (int)DockEdge.Float;
             CmbCoexist.SelectedIndex = (int)CoexistMode.Topmost;
             ChkAutoStart.IsChecked = false;
             ApplyLivePreview();
