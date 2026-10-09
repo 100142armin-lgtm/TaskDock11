@@ -79,12 +79,21 @@ namespace TaskDock11.ViewModels
             {
                 item.GroupName = customName;
                 item.Title = customName;
+                Settings.CustomTitles[$"group:{item.GroupName}"] = customName;
             }
             else
             {
                 _customNames[item.HWnd] = customName;
                 item.CustomTitle = customName;
+
+                // 持久化存储自定义名称到设置中（支持通过原标题和进程名定位）
+                if (!string.IsNullOrWhiteSpace(item.Title))
+                {
+                    Settings.CustomTitles[item.Title] = customName;
+                }
+                Settings.CustomTitles[$"{item.ProcessName}:{item.Title}"] = customName;
             }
+            SaveSettings();
         }
 
         public MainViewModel(Dispatcher dispatcher)
@@ -231,10 +240,26 @@ namespace TaskDock11.ViewModels
 
                 if (!existingHwnds.Contains(item.HWnd))
                 {
-                    if (_customNames.TryGetValue(item.HWnd, out var customName))
+                    string? customTitle = null;
+                    if (_customNames.TryGetValue(item.HWnd, out var memName))
                     {
-                        item.CustomTitle = customName;
+                        customTitle = memName;
                     }
+                    else if (Settings.CustomTitles.TryGetValue($"{item.ProcessName}:{item.Title}", out var pName))
+                    {
+                        customTitle = pName;
+                    }
+                    else if (Settings.CustomTitles.TryGetValue(item.Title, out var tName))
+                    {
+                        customTitle = tName;
+                    }
+
+                    if (!string.IsNullOrEmpty(customTitle))
+                    {
+                        item.CustomTitle = customTitle;
+                        _customNames[item.HWnd] = customTitle;
+                    }
+
                     Windows.Add(item);
                 }
             }
@@ -326,6 +351,25 @@ namespace TaskDock11.ViewModels
                 {
                     Windows.Move(sourceIndex, targetIndex);
                 }
+            }
+        }
+
+        public void HandleDropReorderDirectional(WindowItem sourceItem, WindowItem targetItem, bool insertAfter)
+        {
+            if (sourceItem == targetItem) return;
+            int sourceIndex = Windows.IndexOf(sourceItem);
+            int targetIndex = Windows.IndexOf(targetItem);
+            if (sourceIndex < 0 || targetIndex < 0) return;
+
+            int insertIndex = insertAfter ? targetIndex + 1 : targetIndex;
+            if (sourceIndex < insertIndex)
+            {
+                insertIndex--;
+            }
+
+            if (insertIndex >= 0 && insertIndex < Windows.Count && sourceIndex != insertIndex)
+            {
+                Windows.Move(sourceIndex, insertIndex);
             }
         }
 

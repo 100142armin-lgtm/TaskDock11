@@ -155,6 +155,9 @@ namespace TaskDock11.Services
             string pLower = processName.ToLowerInvariant();
             if (pLower.Contains("chrome") || pLower.Contains("edge") || pLower.Contains("brave") || pLower.Contains("firefox") || pLower.Contains("opera"))
             {
+                // 先智能识别并替换 Chrome/Edge 自定义个人资料名称 (例如 Chrome_Profile 12 => 广告-Cheng Hui)
+                title = BrowserProfileService.ResolveCustomProfileTitle(title, processName);
+
                 string[] browserSuffixes = new[] 
                 { 
                     " - Google Chrome", 

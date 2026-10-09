@@ -34,8 +34,7 @@ namespace TaskDock11.Views
                 FloatTop = _viewModel.Settings.FloatTop,
                 AutoStartWithWindows = _viewModel.Settings.AutoStartWithWindows,
                 GitHubRepoOwner = _viewModel.Settings.GitHubRepoOwner,
-                GitHubRepoName = _viewModel.Settings.GitHubRepoName,
-                CurrentVersion = _viewModel.Settings.CurrentVersion
+                GitHubRepoName = _viewModel.Settings.GitHubRepoName
             };
 
             // 加载科技感 Logo

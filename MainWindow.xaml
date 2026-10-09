@@ -101,6 +101,7 @@
                     PreviewMouseLeftButtonUp="Item_PreviewMouseLeftButtonUp"
                     MouseMove="Item_MouseMove"
                     DragOver="Item_DragOver"
+                    DragLeave="Item_DragLeave"
                     Drop="Item_Drop">
                 <Border.ToolTip>
                     <ToolTip Background="#0F172A" Foreground="#F8FAFC" BorderBrush="#38BDF8" BorderThickness="1"
@@ -136,6 +137,36 @@
                             CornerRadius="10" 
                             Background="#00FFFFFF" 
                             Opacity="0"/>
+
+                    <!-- 拖拽插入与合并的强反馈视觉指示器 -->
+                    <!-- 1. 左侧插入指示光条 (排在左边) -->
+                    <Border x:Name="LeftInsertIndicator" Width="4" HorizontalAlignment="Left" Margin="-5,2,0,2"
+                            CornerRadius="2" Background="#38BDF8" Visibility="Collapsed" IsHitTestVisible="False">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="8" ShadowDepth="0" Color="#38BDF8" Opacity="0.95"/>
+                        </Border.Effect>
+                    </Border>
+
+                    <!-- 2. 右侧插入指示光条 (排在右边) -->
+                    <Border x:Name="RightInsertIndicator" Width="4" HorizontalAlignment="Right" Margin="0,2,-5,2"
+                            CornerRadius="2" Background="#38BDF8" Visibility="Collapsed" IsHitTestVisible="False">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="8" ShadowDepth="0" Color="#38BDF8" Opacity="0.95"/>
+                        </Border.Effect>
+                    </Border>
+
+                    <!-- 3. 合并成组指示框 (流光脉冲紫框与角标) -->
+                    <Border x:Name="MergeIndicator" CornerRadius="10" 
+                            BorderBrush="#C084FC" BorderThickness="2" 
+                            Background="#358B5CF6" Visibility="Collapsed" IsHitTestVisible="False">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="12" ShadowDepth="0" Color="#C084FC" Opacity="0.95"/>
+                        </Border.Effect>
+                        <Border HorizontalAlignment="Center" VerticalAlignment="Top" 
+                                Margin="0,-14,0,0" Padding="5,1" CornerRadius="4" Background="#7E22CE">
+                            <TextBlock Text="+ 合并成组" FontSize="9" FontWeight="Bold" Foreground="#FFFFFF"/>
+                        </Border>
+                    </Border>
 
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                         <Grid HorizontalAlignment="Center" x:Name="IconContainer">

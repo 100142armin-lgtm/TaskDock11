@@ -258,30 +258,79 @@ namespace TaskDock11
 
         private void Item_DragOver(object sender, DragEventArgs e)
         {
-            e.Effects = DragDropEffects.Move;
-            e.Handled = true;
+            if (sender is FrameworkElement elem && elem.DataContext is WindowItem targetItem)
+            {
+                e.Effects = DragDropEffects.Move;
+                e.Handled = true;
+
+                var leftInd = elem.FindName("LeftInsertIndicator") as UIElement;
+                var rightInd = elem.FindName("RightInsertIndicator") as UIElement;
+                var mergeInd = elem.FindName("MergeIndicator") as UIElement;
+
+                var pos = e.GetPosition(elem);
+                bool isCtrl = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl);
+
+                if (targetItem.IsGroup || isCtrl)
+                {
+                    // 目标为分组，或显式按住 Ctrl 时才触发合并分组
+                    if (leftInd != null) leftInd.Visibility = Visibility.Collapsed;
+                    if (rightInd != null) rightInd.Visibility = Visibility.Collapsed;
+                    if (mergeInd != null) mergeInd.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    // 普通拖拽：以中心为界，左半边插入左侧，右半边插入右侧，绝不误触合并分组！
+                    if (mergeInd != null) mergeInd.Visibility = Visibility.Collapsed;
+                    if (pos.X <= elem.ActualWidth * 0.5)
+                    {
+                        if (leftInd != null) leftInd.Visibility = Visibility.Visible;
+                        if (rightInd != null) rightInd.Visibility = Visibility.Collapsed;
+                    }
+                    else
+                    {
+                        if (leftInd != null) leftInd.Visibility = Visibility.Collapsed;
+                        if (rightInd != null) rightInd.Visibility = Visibility.Visible;
+                    }
+                }
+            }
+        }
+
+        private void Item_DragLeave(object sender, DragEventArgs e)
+        {
+            if (sender is FrameworkElement elem)
+            {
+                HideDragIndicators(elem);
+            }
+        }
+
+        private void HideDragIndicators(FrameworkElement elem)
+        {
+            if (elem.FindName("LeftInsertIndicator") is UIElement leftInd) leftInd.Visibility = Visibility.Collapsed;
+            if (elem.FindName("RightInsertIndicator") is UIElement rightInd) rightInd.Visibility = Visibility.Collapsed;
+            if (elem.FindName("MergeIndicator") is UIElement mergeInd) mergeInd.Visibility = Visibility.Collapsed;
         }
 
         private void Item_Drop(object sender, DragEventArgs e)
         {
             if (sender is FrameworkElement elem && elem.DataContext is WindowItem targetItem)
             {
+                HideDragIndicators(elem);
+
                 if (e.Data.GetData(typeof(WindowItem)) is WindowItem sourceItem && sourceItem != targetItem)
                 {
-                    // 判定是否是叠放合并成组：
-                    // 如果按住 Ctrl 拖拽，或者直接松在目标正上方，视为合并为分组；否则视为调整前后顺序
-                    bool isMerge = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl);
-                    if (!isMerge)
-                    {
-                        // 智能识别：如果在中心重合区域松开，自动触发合并
-                        var pos = e.GetPosition(elem);
-                        if (pos.X > elem.ActualWidth * 0.25 && pos.X < elem.ActualWidth * 0.75)
-                        {
-                            isMerge = true;
-                        }
-                    }
+                    var pos = e.GetPosition(elem);
+                    bool isCtrl = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl);
+                    bool isMerge = targetItem.IsGroup || isCtrl;
 
-                    _viewModel.HandleDropMergeOrReorder(sourceItem, targetItem, isMerge);
+                    if (isMerge)
+                    {
+                        _viewModel.HandleDropMergeOrReorder(sourceItem, targetItem, true);
+                    }
+                    else
+                    {
+                        bool insertAfter = pos.X > elem.ActualWidth * 0.5;
+                        _viewModel.HandleDropReorderDirectional(sourceItem, targetItem, insertAfter);
+                    }
                 }
             }
             _isDraggingItem = false;

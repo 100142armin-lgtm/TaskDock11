@@ -34,7 +34,6 @@ namespace TaskDock11.Models
         private bool _autoStartWithWindows = false;
         private string _gitHubRepoOwner = "100142armin-lgtm";
         private string _gitHubRepoName = "TaskDock11";
-        private string _currentVersion = "v1.0.2";
 
         public string BackgroundColorHex
         {
@@ -120,11 +119,12 @@ namespace TaskDock11.Models
             set { _gitHubRepoName = value; OnPropertyChanged(); }
         }
 
-        public string CurrentVersion
-        {
-            get => _currentVersion;
-            set { _currentVersion = value; OnPropertyChanged(); }
-        }
+        public const string AppVersion = "v1.0.2";
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        public string CurrentVersion => AppVersion;
+
+        public Dictionary<string, string> CustomTitles { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? propName = null)
