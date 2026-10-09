@@ -1,0 +1,11 @@
+## Visual Studio / .NET Core gitignore
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+*.nupkg
+TaskDock11.exe.log
