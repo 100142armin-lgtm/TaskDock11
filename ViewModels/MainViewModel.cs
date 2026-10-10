@@ -206,6 +206,7 @@ namespace TaskDock11.ViewModels
                         if (found != null)
                         {
                             child.Title = found.Title;
+                            child.ProfileTitle = found.ProfileTitle;
                             child.IsActive = found.IsActive;
                             child.HasNotification = found.HasNotification;
                             child.NotificationText = found.NotificationText;
@@ -224,6 +225,7 @@ namespace TaskDock11.ViewModels
                     if (found != null)
                     {
                         item.Title = found.Title;
+                        item.ProfileTitle = found.ProfileTitle;
                         item.IsActive = found.IsActive;
                         item.HasNotification = found.HasNotification;
                         item.NotificationText = found.NotificationText;

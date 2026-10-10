@@ -109,6 +109,7 @@ namespace TaskDock11.Services
                 }
                 catch { }
 
+                string profileTitle = "";
                 if (string.IsNullOrEmpty(title))
                 {
                     if (!string.IsNullOrEmpty(processName))
@@ -122,8 +123,8 @@ namespace TaskDock11.Services
                 }
                 else
                 {
-                    // 智能提炼浏览器标题：剥除 - Google Chrome / - Microsoft Edge 等冗余尾巴，只保留网页核心标题！
-                    title = CleanBrowserTitle(title, processName);
+                    // 智能提炼浏览器标题与个人资料识别
+                    title = CleanBrowserTitle(title, processName, hWnd, out profileTitle);
                 }
 
                 // 提取图标
@@ -133,6 +134,7 @@ namespace TaskDock11.Services
                 {
                     HWnd = hWnd,
                     Title = title,
+                    ProfileTitle = profileTitle,
                     Icon = icon,
                     ProcessId = processId,
                     ProcessName = processName,
@@ -149,15 +151,21 @@ namespace TaskDock11.Services
             return result;
         }
 
-        private static string CleanBrowserTitle(string title, string processName)
+        private static string CleanBrowserTitle(string title, string processName, IntPtr hWnd, out string profileTitle)
         {
+            profileTitle = "";
             if (string.IsNullOrWhiteSpace(title)) return title;
             string pLower = processName.ToLowerInvariant();
             if (pLower.Contains("chrome") || pLower.Contains("edge") || pLower.Contains("brave") || pLower.Contains("firefox") || pLower.Contains("opera"))
             {
-                // 先智能识别并替换 Chrome/Edge 自定义个人资料名称 (例如 Chrome_Profile 12 => 广告-Cheng Hui)
-                title = BrowserProfileService.ResolveCustomProfileTitle(title, processName);
+                // 1. 优先通过窗口句柄解析个人资料自定义名称 (如 "广告-Cheng Hui")
+                string? prof = BrowserProfileService.GetProfileNameForWindow(hWnd, processName);
+                if (!string.IsNullOrWhiteSpace(prof))
+                {
+                    profileTitle = prof;
+                }
 
+                // 2. 剥除浏览器后缀
                 string[] browserSuffixes = new[] 
                 { 
                     " - Google Chrome", 
@@ -172,7 +180,18 @@ namespace TaskDock11.Services
                 {
                     if (title.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
                     {
-                        return title.Substring(0, title.Length - suffix.Length).Trim();
+                        title = title.Substring(0, title.Length - suffix.Length).Trim();
+                        break;
+                    }
+                }
+
+                // 3. 若标题中含有 Chrome_Profile 12 或 Profile 12 则继续解析替换
+                if (string.IsNullOrWhiteSpace(profileTitle))
+                {
+                    string resolved = BrowserProfileService.ResolveCustomProfileTitle(title, processName, hWnd);
+                    if (!string.Equals(resolved, title, StringComparison.OrdinalIgnoreCase))
+                    {
+                        profileTitle = resolved;
                     }
                 }
             }

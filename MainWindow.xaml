@@ -105,10 +105,14 @@
                     Drop="Item_Drop">
                 <Border.ToolTip>
                     <ToolTip Background="#0F172A" Foreground="#F8FAFC" BorderBrush="#38BDF8" BorderThickness="1"
-                             Padding="10,6" HasDropShadow="True" Placement="Top">
+                             Padding="12,8" HasDropShadow="True" Placement="Top">
                         <StackPanel Orientation="Vertical">
-                            <TextBlock Text="{Binding DisplayTitle}" FontWeight="SemiBold" FontSize="12" Foreground="#FFFFFF" MaxWidth="320" TextWrapping="Wrap"/>
-                            <TextBlock Text="{Binding ProcessName, StringFormat=应用进程: {0}}" FontSize="10" Foreground="#38BDF8" Margin="0,3,0,0"/>
+                            <!-- 主标题 (优先显示浏览器自定义昵称，如 广告-Cheng Hui) -->
+                            <TextBlock Text="{Binding DisplayTitle}" FontWeight="Bold" FontSize="13" Foreground="#FFFFFF" MaxWidth="340" TextWrapping="Wrap"/>
+                            <!-- 副标题 (当存在自定义昵称时，额外显示当前打开的具体网页/窗口原始标题) -->
+                            <TextBlock Text="{Binding Title, StringFormat=网页: {0}}" FontSize="11" Foreground="#94A3B8" MaxWidth="340" TextWrapping="Wrap" 
+                                       Margin="0,3,0,0" Visibility="{Binding HasSubtitle, Converter={StaticResource BoolToVis}}"/>
+                            <TextBlock Text="{Binding ProcessName, StringFormat=进程: {0}}" FontSize="10" Foreground="#38BDF8" Margin="0,4,0,0"/>
                         </StackPanel>
                     </ToolTip>
                 </Border.ToolTip>
@@ -321,11 +325,18 @@
                                         <Border Margin="4" Padding="6,5" CornerRadius="8" Background="#21262D" Cursor="Hand"
                                                 MouseLeftButtonUp="GroupChild_Click">
                                             <Border.ToolTip>
-                                                <ToolTip Content="{Binding Title}"/>
+                                                <ToolTip Background="#0F172A" Foreground="#F8FAFC" BorderBrush="#38BDF8" BorderThickness="1"
+                                                         Padding="10,6" HasDropShadow="True" Placement="Top">
+                                                    <StackPanel Orientation="Vertical">
+                                                        <TextBlock Text="{Binding DisplayTitle}" FontWeight="Bold" FontSize="12" Foreground="#FFFFFF" MaxWidth="300" TextWrapping="Wrap"/>
+                                                        <TextBlock Text="{Binding Title, StringFormat=网页: {0}}" FontSize="10" Foreground="#94A3B8" MaxWidth="300" TextWrapping="Wrap" 
+                                                                   Margin="0,2,0,0" Visibility="{Binding HasSubtitle, Converter={StaticResource BoolToVis}}"/>
+                                                    </StackPanel>
+                                                </ToolTip>
                                             </Border.ToolTip>
                                             <StackPanel Orientation="Horizontal">
                                                 <Image Source="{Binding Icon}" Width="22" Height="22"/>
-                                                <TextBlock Text="{Binding Title}" Foreground="#E2E8F0" VerticalAlignment="Center" 
+                                                <TextBlock Text="{Binding DisplayTitle}" Foreground="#E2E8F0" VerticalAlignment="Center" 
                                                            MaxWidth="170" TextTrimming="CharacterEllipsis" Margin="6,0,0,0" FontSize="12"/>
                                             </StackPanel>
                                         </Border>

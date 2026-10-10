@@ -11,6 +11,7 @@ namespace TaskDock11.Models
         private IntPtr _hWnd;
         private string _title = string.Empty;
         private string _customTitle = string.Empty;
+        private string _profileTitle = string.Empty;
         private ImageSource? _icon;
         private int _processId;
         private string _processName = string.Empty;
@@ -38,6 +39,7 @@ namespace TaskDock11.Models
                 _title = value; 
                 OnPropertyChanged(); 
                 OnPropertyChanged(nameof(DisplayTitle));
+                OnPropertyChanged(nameof(HasSubtitle));
             }
         }
 
@@ -49,13 +51,41 @@ namespace TaskDock11.Models
                 _customTitle = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(DisplayTitle));
+                OnPropertyChanged(nameof(HasSubtitle));
             }
         }
 
+        public string ProfileTitle
+        {
+            get => _profileTitle;
+            set
+            {
+                _profileTitle = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(DisplayTitle));
+                OnPropertyChanged(nameof(HasSubtitle));
+            }
+        }
+
+        /// <summary>
+        /// 核心展示名称：优先手动重命名 > 浏览器个人资料专属名字 (如 "广告-Cheng Hui") > 网页/窗口标题
+        /// </summary>
         public string DisplayTitle
         {
-            get => !string.IsNullOrWhiteSpace(_customTitle) ? _customTitle : _title;
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(_customTitle)) return _customTitle;
+                if (!string.IsNullOrWhiteSpace(_profileTitle)) return _profileTitle;
+                return _title;
+            }
         }
+
+        /// <summary>
+        /// 当存在个人资料专属名称或手动重命名且与当前网页标题不同时，可在悬浮窗中展示原网页标题作为副标题
+        /// </summary>
+        public bool HasSubtitle => (!string.IsNullOrWhiteSpace(_customTitle) || !string.IsNullOrWhiteSpace(_profileTitle)) 
+                                    && !string.IsNullOrWhiteSpace(_title) 
+                                    && !string.Equals(DisplayTitle, _title, StringComparison.OrdinalIgnoreCase);
 
         public ImageSource? Icon
         {

@@ -119,7 +119,7 @@ namespace TaskDock11.Models
             set { _gitHubRepoName = value; OnPropertyChanged(); }
         }
 
-        public const string AppVersion = "v1.0.2";
+        public const string AppVersion = "v1.0.3";
 
         [System.Text.Json.Serialization.JsonIgnore]
         public string CurrentVersion => AppVersion;

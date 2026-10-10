@@ -19,6 +19,11 @@ namespace TaskDock11.Views
             _downloadUrl = downloadUrl;
             _targetExePath = targetExePath;
 
+            // 定位至屏幕右下角托盘区上方，完全不阻碍用户中央主工作区
+            var workArea = SystemParameters.WorkArea;
+            Left = workArea.Right - Width - 24;
+            Top = workArea.Bottom - Height - 24;
+
             Loaded += async (s, e) => await StartDownloadAndApplyAsync();
         }
 

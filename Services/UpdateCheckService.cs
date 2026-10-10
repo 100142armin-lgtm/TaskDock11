@@ -73,9 +73,9 @@ namespace TaskDock11.Services
                         string? currentExePath = Environment.ProcessPath;
                         if (!string.IsNullOrEmpty(directExeDownloadUrl) && !string.IsNullOrEmpty(currentExePath))
                         {
-                            // 启动应用内智能下载与自动替换
+                            // 启动应用内静默下载与平滑自替换 (无模态不抢占焦点，右下角轻量提示)
                             var progressWin = new UpdateProgressWindow(directExeDownloadUrl, currentExePath);
-                            progressWin.ShowDialog();
+                            progressWin.Show();
                         }
                         else if (!string.IsNullOrEmpty(releaseUrl))
                         {
